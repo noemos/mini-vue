@@ -1,5 +1,5 @@
 import {reactive} from "../reactive";
-import {effect} from "../effect";
+import {effect,stop} from "../effect";
 import {run} from "jest";
 
 
@@ -22,7 +22,7 @@ describe('effect',()=>{
 //    实现runner，当用户调用effect函数的时候，返回一个runner函数
     it('should return runner when call effect', ()=> {
     //    effect(fn) function(runner) fn return 调用runner会拿到fn返回的值
-        let foo = 10;
+        let foo = 10;//
         const runner = effect(()=>{
             foo++;
             return "foo";
@@ -36,4 +36,63 @@ describe('effect',()=>{
 
 
     });
+//    实现effect里面的scheduler功能
+    it('scheduler',  ()=> {
+        let dummy;
+        let run:any;
+        const scheduler = jest.fn(()=>{
+            run = runner
+        });
+        const obj = reactive({foo:1});
+        const runner = effect(()=>{
+            dummy = obj.foo;
+        },
+            { scheduler }
+        );
+        expect(scheduler).not.toHaveBeenCalled();
+        expect(dummy).toBe(1);
+    //   开始调用trigger
+        obj.foo++;
+
+        expect(scheduler).toHaveBeenCalledTimes(1)
+        expect(dummy).toBe(1);
+        run();
+        expect(dummy).toBe(2)
+
+    });
+//    实现stop
+    it('stop ',  ()=> {
+        let dummy;
+        const obj = reactive({prop:1});
+        const runner = effect(()=>{
+            dummy=obj.prop;
+        });
+        obj.prop=2;
+        expect(dummy).toBe(2);
+        stop(runner);
+        obj.prop=3;
+        expect(dummy).toBe(2);
+        runner();
+        expect(dummy).toBe(3)
+
+    });
+//    实现onstop
+    it('onStop ', ()=> {
+        const obj = reactive({
+            foo: 1,
+        });
+        const onStop = jest.fn();
+        let dummy;
+        const runner = effect(
+            () => {
+                dummy = obj.foo;
+            },
+            {
+                onStop,
+            }
+        );
+        stop(runner);
+        expect(onStop).toBeCalledTimes(1)
+    });
+
 });
