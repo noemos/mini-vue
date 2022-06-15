@@ -1,24 +1,27 @@
 import {track,trigger} from "./effect";
+import {mutableHandlers,readOnlyHandlers} from "./baseHandlers";
 
+export const enum ReactiveFlags{
+    IS_REACTIVE = "__v_isReactive",
+    IS_READONLY = "__v_isReadonly"
 
+}
 
 export function reactive(raw){
-    return new Proxy(raw,{
-        get(target,key) {
-        //    {foo:1}
-        //    foo
-            const res = Reflect.get(target,key);
-            //todo收集依赖
-            track(target,key)
+    return createActiveObject(raw,mutableHandlers)
+}
+export  function  readonly(raw) {
+    return createActiveObject(raw, readOnlyHandlers)
 
-            return res;
-        },
+}
+export  function  isReactive(value){
+    //这里没有挂载key，所以将他转为布尔值
+    return !!value[ReactiveFlags.IS_REACTIVE]
+}
+export function  isReadonly(value){
+    return !!value[ReactiveFlags.IS_READONLY]
 
-        set(target,key,value){
-            const res = Reflect.set(target,key,value);
-        //    todo触发依赖
-            trigger(target,key)
-            return res
-        }
-    })
+}
+function createActiveObject(raw:any,baseHandlers){
+    return new Proxy(raw,baseHandlers)
 }

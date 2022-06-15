@@ -23,8 +23,6 @@ class ReactiveEffect{
             this.active=false;
 
         }
-
-
         }
     }
     function cleanupEffect(effect){
