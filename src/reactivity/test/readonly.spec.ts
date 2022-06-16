@@ -1,4 +1,4 @@
-import {isReadonly, readonly} from "../reactive";
+import {isProxy, isReadonly, readonly} from "../reactive";
 
 
 describe('readonly',()=>{
@@ -9,7 +9,10 @@ describe('readonly',()=>{
         expect(wrapped).not.toBe(original);
         expect(isReadonly(wrapped)).toBe(true)
         expect(isReadonly(original)).toBe(false)
+        expect(isReadonly(wrapped.bar)).toBe(true)
+        expect(isReadonly(original.bar)).toBe(false)
         expect(wrapped.foo).toBe(1);
+        expect(isProxy(wrapped)).toBe(true)
 
     });
 //    当调用set的时候，要给一个警告

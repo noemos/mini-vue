@@ -1,5 +1,6 @@
 import {extend} from "../shared";
-
+let activeEffect;
+let shoudTrack;
 class ReactiveEffect{
     private _fn :any;
     deps=[];
@@ -11,8 +12,17 @@ class ReactiveEffect{
         this.scheduler = scheduler;
     }
     run(){
+        //收集依赖,判断他是不是stop
+        if (!this.active){
+            return this._fn()
+        }
+        shoudTrack = true;
+
         activeEffect = this;
-        return this._fn();
+        const result = this._fn();
+        shoudTrack = false;
+
+        return  result
     }
     stop(){
         if (this.active){
@@ -33,6 +43,7 @@ class ReactiveEffect{
 }
 const targetMap = new Map();
 export function track(target,key){
+    if (!isTracking()) return;
     let depsMap = targetMap.get(target);
     if (!depsMap){
         //初始化一个depsmap
@@ -46,9 +57,12 @@ export function track(target,key){
         depsMap.set(key,dep)
 
     }
-    if (!activeEffect) return
+    if (dep.has(activeEffect)) return;
     dep.add(activeEffect);
     activeEffect.deps.push(dep)
+}
+function isTracking(){
+    return shoudTrack && activeEffect !== undefined;
 }
 export function trigger(target,key){
 //   基于target和key去收集前面所遍历的depsmap对象和dep对象，去收集前面
@@ -65,7 +79,7 @@ export function trigger(target,key){
 }
 
 //创建一个全局变量
-let activeEffect;
+
 export function effect(fn,options:any={}){
 //   创建一个函数fn
     const scheduler = options.scheduler;

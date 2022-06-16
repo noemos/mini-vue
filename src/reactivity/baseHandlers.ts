@@ -1,10 +1,12 @@
 import {track, trigger} from "./effect";
-import {ReactiveFlags, readonly} from "./reactive";
+import {reactive, ReactiveFlags, readonly, shallowReadonly} from "./reactive";
+import {extend, isObject} from "../shared";
 
 const get = createGetter();
 const set = createSetter();
-const readonlyGet = createGetter(true)
-function createGetter(isReadOnly=false){
+const readonlyGet = createGetter(true);
+const shallowReadonlyGet = createGetter(true,true)
+function createGetter(isReadOnly=false,shallow = false){
     return function get(target,key){
         if (key===ReactiveFlags.IS_REACTIVE){
             return !isReadOnly
@@ -13,6 +15,15 @@ function createGetter(isReadOnly=false){
         }
         //    foo
         const res = Reflect.get(target,key);
+
+        if (shallow){
+            return res
+        }
+
+        if (isObject(res)){
+            return isReadOnly?readonly(res):reactive(res)
+        }
+
         //todo收集依赖
         if (!isReadOnly){
             track(target,key)
@@ -35,6 +46,9 @@ export const mutableHandlers={
     //利用缓存来优化
     set,
 }
+
+
+
 export const readOnlyHandlers={
     get:readonlyGet,
 
@@ -44,3 +58,6 @@ export const readOnlyHandlers={
         return true
     }
 }
+export const shallowReadonlyHandlers = extend({},readOnlyHandlers,{
+    get:shallowReadonlyGet
+})
